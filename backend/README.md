@@ -105,10 +105,6 @@ Install dependencies:
 npm install
 ```
 
----
-
-## Project & Database Setup
-
 Buat file `.env` berdasarkan `.env.example`.
 
 ```env
@@ -117,6 +113,10 @@ MONGODB_URI=mongodb://127.0.0.1:27017/inventory_management
 JWT_SECRET=examples
 JWT_EXPIRES_IN=1d
 ```
+
+---
+
+### Project & Database Setup
 
 Project menggunakan MongoDB. MongoDB dapat dijalankan menggunakan Docker.
 
@@ -146,7 +146,7 @@ http://localhost:3000
 
 ---
 
-## Seed Test Data
+### Seed Test Data
 
 Project menyediakan script untuk memasukkan sample inventory data.
 
@@ -165,7 +165,7 @@ Seeder ditujukan untuk development dan testing.
 
 ---
 
-## Technical Decisions
+# Technical Decisions
 
 ### 1. Request Flow & Layer Separation
 
