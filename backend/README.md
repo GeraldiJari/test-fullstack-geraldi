@@ -126,7 +126,7 @@ Clone repository kemudian masuk ke folder backend:
 cd backend
 ```
 
-Install dependencies:
+Install dependencies lalu jalankan:
 
 ```bash
 npm install
@@ -134,13 +134,11 @@ npm install
 
 ---
 
-## Database Setup
+## Project & Database Setup
 
-Project menggunakan MongoDB.
+Project menggunakan MongoDB. MongoDB dapat dijalankan menggunakan Docker.
 
-MongoDB dapat dijalankan menggunakan Docker.
-
-Dari root project:
+Jalankan Docker:
 
 ```bash
 docker compose up -d
@@ -150,22 +148,6 @@ Pastikan container MongoDB berjalan:
 
 ```bash
 docker ps
-```
-
----
-
-## Running the Application
-
-Development:
-
-```bash
-npm run dev
-```
-
-Production:
-
-```bash
-npm start
 ```
 
 Server secara default berjalan pada:
