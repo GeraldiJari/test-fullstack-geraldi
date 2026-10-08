@@ -6,20 +6,6 @@ Project ini dibuat sebagai bagian dari **Backend Developer Intern Take-Home Test
 
 ---
 
-## Tech Stack
-
-- **Node.js**
-- **Express.js**
-- **MongoDB**
-- **Mongoose**
-- **JWT (JSON Web Token)**
-- **bcryptjs**
-- **express-validator**
-- **Docker**
-- **Nodemon** untuk development
-
----
-
 ## API Endpoints
 
 ### Authentication
@@ -105,7 +91,23 @@ Search dilakukan pada:
 
 ---
 
-## Environment Variables
+# Installation
+
+Clone repository kemudian masuk ke folder backend:
+
+```bash
+cd backend
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+---
+
+## Project & Database Setup
 
 Buat file `.env` berdasarkan `.env.example`.
 
@@ -115,26 +117,6 @@ MONGODB_URI=mongodb://127.0.0.1:27017/inventory_management
 JWT_SECRET=examples
 JWT_EXPIRES_IN=1d
 ```
-
----
-
-## Installation
-
-Clone repository kemudian masuk ke folder backend:
-
-```bash
-cd backend
-```
-
-Install dependencies lalu jalankan:
-
-```bash
-npm install
-```
-
----
-
-## Project & Database Setup
 
 Project menggunakan MongoDB. MongoDB dapat dijalankan menggunakan Docker.
 
@@ -148,6 +130,12 @@ Pastikan container MongoDB berjalan:
 
 ```bash
 docker ps
+```
+
+Kemudian jalankan:
+
+```bash
+npm run dev
 ```
 
 Server secara default berjalan pada:
@@ -181,22 +169,26 @@ Seeder ditujukan untuk development dan testing.
 
 ### 1. Request Flow & Layer Separation
 
+Saya memilih pola ini karena sebelumnya saya terbiasa menggunakan struktur Controller, Service, dan Repository pada pengembangan menggunakan Laravel. Ketika berpindah ke Node.js dan Express, saya mempertahankan pola yang sama karena sudah familiar dengan pemisahan tanggung jawabnya.
+
 Request diproses melalui:
 
 ```text
 Router
-→ Middleware
-→ Controller
-→ Service
-→ Repository
-→ Database
+-> Middleware
+-> Controller
+-> Service
+-> Repository
+-> Database
 ```
 
-Layer separation digunakan agar setiap bagian memiliki tanggung jawab yang jelas.
+Request pertama kali masuk melalui Router untuk menentukan endpoint yang dituju. Setelah itu, Middleware melakukan hal seperti authentication dan validation.
 
-Controller bertanggung jawab terhadap HTTP layer, Service menangani business logic, sedangkan Repository menangani database operations.
+Request kemudian diteruskan ke Controller untuk menangani HTTP request dan response. Jika membutuhkan proses lebih lanjut, Controller meneruskannya ke Service untuk menjalankan business logic.
 
-Dengan pendekatan ini, perubahan pada database layer tidak perlu memengaruhi controller secara langsung dan business logic tidak tercampur dengan HTTP handling.
+Service kemudian menggunakan Repository ketika perlu berkomunikasi dengan database. Repository menjadi bagian yang berinteraksi langsung dengan MongoDB.
+
+Untuk project yang lebih besar, pemisahan ini juga memudahkan pengembangan dan perubahan di kemudian hari. Misalnya, perubahan pada database atau query tidak perlu mengubah business logic yang berada di Service, sementara Controller tetap fokus pada komunikasi dengan client.
 
 ---
 
@@ -243,35 +235,16 @@ Untuk aplikasi production berbasis browser, HttpOnly Secure Cookie dapat menjadi
 
 ### 3. Concurrent Stock Update
 
-Salah satu masalah yang perlu diperhatikan adalah ketika dua user mencoba mengurangi stock secara bersamaan.
+Jika dua user mencoba mengurangi stock secara bersamaan, pengecekan stock dilakukan langsung dalam operasi database.
 
-Misalnya:
-
-```text
-Initial stock = 1
-```
-
-Dua request masuk hampir bersamaan:
+Misalnya stock awal adalah `1` dan dua request masing-masing ingin mengurangi `1`:
 
 ```text
 User A → decrease 1
 User B → decrease 1
 ```
 
-Implementasi sederhana seperti:
-
-```text
-Read stock
-→ Check stock
-→ Decrease stock
-→ Save
-```
-
-dapat mengalami race condition karena kedua request dapat membaca nilai stock yang sama sebelum salah satu update selesai.
-
-Untuk menghindari hal tersebut, project menggunakan atomic conditional update MongoDB.
-
-Repository menggunakan kondisi:
+Project menggunakan **atomic conditional update** MongoDB:
 
 ```js
 {
@@ -280,7 +253,7 @@ Repository menggunakan kondisi:
 }
 ```
 
-dan operasi:
+dengan:
 
 ```js
 {
@@ -290,22 +263,16 @@ dan operasi:
 }
 ```
 
-Artinya stock hanya akan dikurangi apabila stock pada saat operasi database masih mencukupi.
-
-Dengan stock awal `1`:
+Artinya, stock hanya akan dikurangi jika stock masih mencukupi pada saat operasi dilakukan.
 
 ```text
-Request A → stock 1 → 0 → SUCCESS
-Request B → stock 0 → condition fails → CONFLICT
+Stock = 1
+
+Request A → berhasil → Stock = 0
+Request B → gagal    → Stock tetap 0
 ```
 
-Request kedua mendapatkan:
-
-```text
-409 Conflict
-```
-
-dengan response:
+Request yang gagal akan mendapatkan `409 Conflict` dengan response:
 
 ```json
 {
@@ -313,109 +280,10 @@ dengan response:
 }
 ```
 
-Dengan demikian stock tidak dapat menjadi nilai negatif akibat concurrent stock reduction.
+Dengan pendekatan ini, concurrent request tidak dapat menyebabkan stock menjadi negatif.
 
 ---
 
-## Error Handling
+Terima Kasih
 
-API menggunakan centralized error handling.
-
-Contoh response:
-
-### Invalid ID
-
-```json
-{
-    "message": "Invalid resource ID"
-}
-```
-
-### Item Not Found
-
-```json
-{
-    "message": "Item not found"
-}
-```
-
-### Insufficient Stock
-
-```json
-{
-    "message": "Insufficient stock"
-}
-```
-
-### Authentication Required
-
-```json
-{
-    "message": "Authentication token is required"
-}
-```
-
----
-
-## Validation
-
-Request validation dilakukan menggunakan `express-validator`.
-
-Contoh validasi:
-
-- Name tidak boleh kosong.
-- Description tidak boleh kosong.
-- Email harus valid.
-- Password minimal 6 karakter.
-- Stock harus berupa integer dan tidak boleh negatif.
-- Price harus berupa angka dan tidak boleh negatif.
-- Stock reduction quantity harus integer positif.
-
----
-
-## Testing
-
-API dapat diuji menggunakan Postman.
-
-Testing mencakup:
-
-- Register
-- Login
-- JWT authentication
-- Create item
-- Get items
-- Search
-- Pagination
-- Get item by ID
-- Update item
-- Delete item
-- Input validation
-- Invalid resource ID
-- Insufficient stock
-- Concurrent stock reduction
-
-API documentation dan collection tersedia melalui Postman.
-
----
-
-## Docker
-
-MongoDB dijalankan menggunakan Docker Compose dari root project.
-
-```bash
-docker compose up -d
-```
-
-Untuk menghentikan container:
-
-```bash
-docker compose down
-```
-
-Data MongoDB disimpan pada Docker named volume sehingga data tetap tersedia ketika container dihentikan dan dijalankan kembali.
-
----
-
-## License
-
-This project was created for a Backend Developer Intern take-home test.
+Geraldi
