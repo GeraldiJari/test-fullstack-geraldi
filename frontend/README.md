@@ -64,127 +64,35 @@ src/
 ├── index.css
 └── main.jsx
 ```
-```text userService.js ``` bertanggung jawab untuk berkomunikasi dengan API.
-Kemudian useUsers.js menangani proses fetching dan state seperti users, loading, dan error.
-Sementara UserCard dan UserModal fokus pada tampilan dan interaksi UI.
+```userService.js``` bertanggung jawab untuk berkomunikasi dengan API.
+Kemudian ```useUsers.js``` menangani proses fetching dan state seperti users, loading, dan error.
+Sementara ```UserCard``` dan ```UserModal``` fokus pada tampilan dan interaksi UI.
 Dengan pemisahan ini, saya tidak perlu menempatkan seluruh proses fetching dan tampilan di dalam satu component.
 Misalnya, jika endpoint API berubah, saya cukup melakukan perubahan pada bagian service tanpa harus mengubah component yang bertugas menampilkan user.
-Kemudian jalankan:
+
+### 3. Performance Optimization
+
+Pada project ini jumlah data dari JSONPlaceholder relatif kecil sehingga client-side filtering masih cukup sederhana dan sesuai dengan requirement.
+Namun, jika API tiba-tiba mengembalikan 10.000 user sekaligus dan pencarian mulai terasa lag, saya tidak akan hanya mengandalkan filtering biasa.
+Saya menggunakan useMemo untuk menyimpan hasil filtering berdasarkan users dan search, sehingga filtering tidak perlu dihitung kembali ketika state lain berubah.
 
 ```bash
-npm run dev
-```
+const filteredUsers = useMemo(() => {
+    const keyword = search.toLowerCase().trim();
 
-```text
-http://localhost:3000
-```
-
-### Seed Test Data
-
-Project menyediakan script untuk memasukkan sample inventory data.
-
-Jalankan:
-
-```bash
-npm run seed
-```
-
-Seeder akan:
-
-1. Menghapus data item yang sudah ada.
-2. Memasukkan 30 sample items yang telah dibuat sebelumnya.
-
-Seeder ditujukan untuk development dan testing.
-
----
-
-# Technical Decisions
-
-### 1. Request Flow & Layer Separation
-
-Saya memilih pola ini karena sebelumnya saya terbiasa menggunakan struktur Controller, Service, dan Repository pada pengembangan menggunakan Laravel. Ketika berpindah ke Node.js dan Express, saya mempertahankan pola yang sama karena sudah familiar dengan pemisahan tanggung jawabnya.
-
-Request diproses melalui:
-
-```text
-Router
--> Middleware
--> Controller
--> Service
--> Repository
--> Database
-```
-
-Request pertama kali masuk melalui Router untuk menentukan endpoint yang dituju. Setelah itu, Middleware melakukan hal seperti authentication dan validation.
-
-Request kemudian diteruskan ke Controller untuk menangani HTTP request dan response. Jika membutuhkan proses lebih lanjut, Controller meneruskannya ke Service untuk menjalankan business logic.
-
-Service kemudian menggunakan Repository ketika perlu berkomunikasi dengan database. Repository menjadi bagian yang berinteraksi langsung dengan MongoDB.
-
-Untuk project yang lebih besar, pemisahan ini juga memudahkan pengembangan dan perubahan di kemudian hari. Misalnya, perubahan pada database atau query tidak perlu mengubah business logic yang berada di Service, sementara Controller tetap fokus pada komunikasi dengan client.
-
----
-
-### 2. JWT: LocalStorage vs HttpOnly Cookie
-
-HttpOnly Cookie.
-
-Alasannya, JWT yang disimpan pada HttpOnly Cookie tidak dapat diakses langsung oleh JavaScript. Hal ini mengurangi risiko token dicuri melalui XSS.
-
-Kekurangannya, penggunaan Cookie membutuhkan konfigurasi security tambahan seperti CSRF protection, Secure, dan SameSite.
-
-LocalStorage memang lebih sederhana untuk digunakan, tetapi token dapat diakses oleh JavaScript. Jika aplikasi mengalami XSS, token tersebut berpotensi dicuri.
-
----
-
-### 3. Concurrent Stock Update
-
-Jika dua user mencoba mengurangi stock secara bersamaan, pengecekan stock dilakukan langsung dalam operasi database.
-
-Misalnya stock awal adalah `1` dan dua request masing-masing ingin mengurangi `1`:
-
-```text
-User A -> decrease 1
-User B -> decrease 1
-```
-
-Project menggunakan **atomic conditional update** MongoDB:
-
-```js
-{
-    _id: id,
-    stock: { $gte: quantity }
-}
-```
-
-dengan:
-
-```js
-{
-    $inc: {
-        stock: -quantity
+    if (!keyword) {
+        return users;
     }
-}
+
+    return users.filter((user) => {
+        return (
+            user.name.toLowerCase().includes(keyword) ||
+            user.email.toLowerCase().includes(keyword) ||
+            user.company.name.toLowerCase().includes(keyword)
+        );
+    });
+}, [users, search]);
 ```
-
-Artinya, stock hanya akan dikurangi jika stock masih mencukupi pada saat operasi dilakukan.
-
-```text
-Stock = 1
-
-Request A -> berhasil -> Stock = 0
-Request B -> gagal    -> Stock tetap 0
-```
-
-Request yang gagal akan mendapatkan `409 Conflict` dengan response:
-
-```json
-{
-    "message": "Insufficient stock"
-}
-```
-
-Dengan pendekatan ini, concurrent request tidak dapat menyebabkan stock menjadi negatif.
 
 ---
 
