@@ -1,11 +1,3 @@
-# Repository Service RESTful API
-
-RESTful API untuk mengelola user authentication dan items menggunakan Node.js, Express, MongoDB, dan Mongoose.
-
-Project ini dibuat sebagai bagian dari **Backend Developer Intern Take-Home Test**.
-
----
-
 # Installation
 
 Clone repository kemudian masuk ke folder frontend:
@@ -28,8 +20,8 @@ npm run dev
 
 ### 1. State Management & Lifecycle
 
-Saya menggunakan custom hook useUsers untuk menangani proses pengambilan data user dari API.
-Saya memilih pendekatan ini karena proses fetching merupakan proses yang tidak perlu dijalankan setiap kali component melakukan render. Karena itu, saya menggunakan useEffect untuk menjalankan proses tersebut ketika component pertama kali melakukan mount.
+Saya menggunakan custom hook ```useUsers``` untuk menangani proses pengambilan data user dari API.
+Saya memilih pendekatan ini karena proses fetching merupakan proses yang tidak perlu dijalankan setiap kali component melakukan render. Karena itu, saya menggunakan ```useEffect``` untuk menjalankan proses tersebut ketika component pertama kali melakukan mount.
 
 Implementasinya saya menggunakan dependency array kosong:
 ```bash
