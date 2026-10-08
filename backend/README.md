@@ -114,11 +114,7 @@ JWT_SECRET=examples
 JWT_EXPIRES_IN=1d
 ```
 
----
-
 ### Project & Database Setup
-
-Project menggunakan MongoDB. MongoDB dapat dijalankan menggunakan Docker.
 
 Jalankan Docker:
 
@@ -138,13 +134,9 @@ Kemudian jalankan:
 npm run dev
 ```
 
-Server secara default berjalan pada:
-
 ```text
 http://localhost:3000
 ```
-
----
 
 ### Seed Test Data
 
